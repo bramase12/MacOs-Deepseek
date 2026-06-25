@@ -1,0 +1,2627 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Simulator</title>
+    <style>
+        :root {
+            --bg-desktop: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%231a1a2e"/><stop offset="30%" stop-color="%23162d4a"/><stop offset="60%" stop-color="%230f3b5c"/><stop offset="100%" stop-color="%230a1628"/></linearGradient></defs><rect fill="url(%23g)" width="1920" height="1080"/><circle cx="300" cy="200" r="250" fill="%23ffffff08"/><circle cx="1500" cy="700" r="350" fill="%23ffffff05"/><circle cx="900" cy="500" r="200" fill="%23ffffff06"/></svg>');
+            --bg-desktop-light: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23b8d4e3"/><stop offset="40%" stop-color="%2387ceeb"/><stop offset="70%" stop-color="%2368b8d4"/><stop offset="100%" stop-color="%234a90b0"/></linearGradient></defs><rect fill="url(%23g)" width="1920" height="1080"/><circle cx="200" cy="150" r="300" fill="%23ffffff10"/><circle cx="1600" cy="800" r="400" fill="%23ffffff0d"/></svg>');
+            --glass-bg: rgba(255, 255, 255, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.35);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --surface-bg: #ffffff;
+            --surface-secondary: #f5f5f7;
+            --accent: #0071e3;
+            --accent-hover: #0077ed;
+            --red: #ff3b30;
+            --orange: #ff9500;
+            --yellow: #ffcc00;
+            --green: #34c759;
+            --menu-bg: rgba(255, 255, 255, 0.8);
+            --dock-bg: rgba(255, 255, 255, 0.55);
+            --divider: rgba(0, 0, 0, 0.1);
+            --window-header: #f0f0f2;
+            --window-body: #ffffff;
+            --input-bg: #f5f5f7;
+            --hover-bg: rgba(0, 0, 0, 0.04);
+            --active-bg: rgba(0, 0, 0, 0.08);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.18);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-xl: 24px;
+            --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            --font-mono: 'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace;
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        [data-theme="dark"] {
+            --glass-bg: rgba(30, 30, 32, 0.78);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --surface-bg: #1c1c1e;
+            --surface-secondary: #2c2c2e;
+            --menu-bg: rgba(28, 28, 30, 0.85);
+            --dock-bg: rgba(28, 28, 30, 0.6);
+            --divider: rgba(255, 255, 255, 0.12);
+            --window-header: #2a2a2c;
+            --window-body: #1c1c1e;
+            --input-bg: #2c2c2e;
+            --hover-bg: rgba(255, 255, 255, 0.06);
+            --active-bg: rgba(255, 255, 255, 0.1);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+            --bg-desktop: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%230a0a0f"/><stop offset="50%" stop-color="%23101018"/><stop offset="100%" stop-color="%2308080c"/></linearGradient></defs><rect fill="url(%23g)" width="1920" height="1080"/></svg>');
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-system);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            user-select: none;
+            -webkit-user-select: none;
+            background: #000;
+        }
+        #desktop {
+            position: absolute;
+            inset: 0;
+            background-image: var(--bg-desktop-light);
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.8s ease;
+            z-index: 0;
+        }
+        [data-theme="dark"] #desktop {
+            background-image: var(--bg-desktop);
+        }
+        #desktop-icons {
+            position: absolute;
+            top: 48px;
+            left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 2;
+            pointer-events: auto;
+        }
+        .desktop-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+            padding: 8px 4px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        .desktop-icon:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+        .desktop-icon:active {
+            background: rgba(255, 255, 255, 0.28);
+        }
+        .desktop-icon .icon-img {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 4px;
+            pointer-events: none;
+        }
+        .desktop-icon span {
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.2;
+            pointer-events: none;
+            letter-spacing: -0.01em;
+        }
+        #menu-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: var(--menu-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 12.5px;
+            color: var(--text-primary);
+            border-bottom: 0.5px solid var(--divider);
+            transition: var(--transition-smooth);
+        }
+        #menu-bar .apple-menu {
+            font-size: 16px;
+            padding: 2px 8px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: var(--transition-fast);
+            line-height: 1;
+        }
+        #menu-bar .apple-menu:hover {
+            background: var(--hover-bg);
+        }
+        #menu-bar .menu-spacer {
+            flex: 1;
+        }
+        #menu-bar .menu-status {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        #menu-bar .menu-status span {
+            cursor: pointer;
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: var(--transition-fast);
+        }
+        #menu-bar .menu-status span:hover {
+            background: var(--hover-bg);
+        }
+        #dock {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 90;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            background: var(--dock-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 20px;
+            padding: 6px 8px;
+            border: 0.5px solid var(--glass-border);
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition-smooth);
+        }
+        .dock-item {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            font-size: 26px;
+            flex-shrink: 0;
+        }
+        .dock-item:hover {
+            transform: scale(1.25) translateY(-8px);
+            filter: brightness(1.1);
+        }
+        .dock-item:active {
+            transform: scale(0.95) translateY(2px);
+        }
+        .dock-item.running::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            opacity: 0.7;
+        }
+        .dock-divider {
+            width: 1px;
+            height: 36px;
+            background: var(--divider);
+            margin: 0 4px;
+            align-self: center;
+            border-radius: 1px;
+        }
+        .window {
+            position: absolute;
+            background: var(--window-body);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            min-width: 320px;
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10;
+            transition: box-shadow 0.2s ease, opacity 0.2s ease;
+            border: 0.5px solid var(--glass-border);
+            animation: windowOpen 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes windowOpen {
+            from {
+                opacity: 0;
+                transform: scale(0.85) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        @keyframes windowClose {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: scale(0.85) translateY(20px);
+            }
+        }
+        .window.closing {
+            animation: windowClose 0.2s ease forwards;
+            pointer-events: none;
+        }
+        .window.focused {
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 50 !important;
+            border-color: var(--accent);
+        }
+        .window.minimized {
+            opacity: 0;
+            transform: translateY(100vh) scale(0.5);
+            pointer-events: none;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .window-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            background: var(--window-header);
+            cursor: grab;
+            flex-shrink: 0;
+            gap: 8px;
+            border-bottom: 0.5px solid var(--divider);
+            transition: var(--transition-smooth);
+        }
+        .window-header:active {
+            cursor: grabbing;
+        }
+        .window-buttons {
+            display: flex;
+            gap: 7px;
+            flex-shrink: 0;
+        }
+        .win-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            border: none;
+            outline: none;
+        }
+        .win-btn.close {
+            background: #ff5f57;
+        }
+        .win-btn.minimize {
+            background: #febc2e;
+        }
+        .win-btn.maximize {
+            background: #28c840;
+        }
+        .win-btn:hover {
+            filter: brightness(0.85);
+            transform: scale(1.1);
+        }
+        .window-title {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            pointer-events: none;
+            letter-spacing: -0.01em;
+        }
+        .window-body {
+            flex: 1;
+            overflow: auto;
+            padding: 14px;
+            color: var(--text-primary);
+            background: var(--window-body);
+            transition: var(--transition-smooth);
+        }
+        .window-body::-webkit-scrollbar {
+            width: 5px;
+        }
+        .window-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .window-body::-webkit-scrollbar-thumb {
+            background: rgba(128, 128, 128, 0.35);
+            border-radius: 10px;
+        }
+        .resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            cursor: nwse-resize;
+            z-index: 5;
+            opacity: 0;
+        }
+        #spotlight-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 18vh;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        #spotlight-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #spotlight-search {
+            width: 600px;
+            max-width: 90vw;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: var(--radius-xl);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow-lg);
+            border: 0.5px solid var(--glass-border);
+            transition: var(--transition-smooth);
+        }
+        #spotlight-search input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 18px;
+            color: var(--text-primary);
+            outline: none;
+            font-family: var(--font-system);
+        }
+        #spotlight-search .spotlight-icon {
+            font-size: 20px;
+            opacity: 0.6;
+        }
+        #spotlight-results {
+            position: absolute;
+            top: calc(18vh + 60px);
+            width: 600px;
+            max-width: 90vw;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 0.5px solid var(--glass-border);
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+        #spotlight-results.show {
+            display: block;
+        }
+        #spotlight-results .result-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            color: var(--text-primary);
+            font-size: 14px;
+            border-radius: 6px;
+            margin: 2px 6px;
+        }
+        #spotlight-results .result-item:hover {
+            background: var(--hover-bg);
+        }
+        #notification-center {
+            position: fixed;
+            right: -420px;
+            top: 32px;
+            width: 380px;
+            max-height: 70vh;
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border-radius: var(--radius-xl);
+            z-index: 150;
+            box-shadow: var(--shadow-lg);
+            border: 0.5px solid var(--glass-border);
+            transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 16px;
+            overflow-y: auto;
+        }
+        #notification-center.open {
+            right: 16px;
+        }
+        #notification-center h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+        .notification-toast {
+            position: fixed;
+            top: 40px;
+            right: 20px;
+            z-index: 300;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: var(--radius-md);
+            padding: 12px 18px;
+            box-shadow: var(--shadow-md);
+            border: 0.5px solid var(--glass-border);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            animation: slideInRight 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.3s ease;
+            max-width: 350px;
+        }
+        @keyframes slideInRight {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        #control-center-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 180;
+            background: transparent;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        #control-center-overlay.active {
+            pointer-events: auto;
+            opacity: 1;
+        }
+        #control-center {
+            position: fixed;
+            right: 16px;
+            top: 36px;
+            width: 320px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border-radius: var(--radius-xl);
+            z-index: 185;
+            box-shadow: var(--shadow-lg);
+            border: 0.5px solid var(--glass-border);
+            padding: 18px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-10px);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #control-center.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        #control-center .cc-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        #control-center .cc-toggle {
+            flex: 1;
+            min-width: 70px;
+            padding: 12px 10px;
+            border-radius: var(--radius-md);
+            background: var(--surface-secondary);
+            text-align: center;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: var(--transition-fast);
+            border: none;
+            font-family: var(--font-system);
+        }
+        #control-center .cc-toggle:hover {
+            background: var(--hover-bg);
+        }
+        #control-center .cc-toggle.active {
+            background: var(--accent);
+            color: #fff;
+        }
+        #control-center .cc-slider {
+            width: 100%;
+            margin: 4px 0;
+            accent-color: var(--accent);
+        }
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+        #login-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        #login-screen .login-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #555;
+            margin-bottom: 16px;
+            font-size: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        #login-screen .login-name {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        #login-screen .login-input {
+            background: rgba(255, 255, 255, 0.12);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: #fff;
+            font-size: 15px;
+            width: 240px;
+            text-align: center;
+            outline: none;
+            font-family: var(--font-system);
+        }
+        #login-screen .login-btn {
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #fff;
+            padding: 8px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition-fast);
+            font-family: var(--font-system);
+        }
+        #login-screen .login-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+        #boot-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 600;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+        #boot-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #boot-screen .boot-logo {
+            font-size: 60px;
+            animation: bootPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes bootPulse {
+            0%,
+            100% {
+                opacity: 0.4;
+                transform: scale(0.95);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+        #boot-screen .boot-progress {
+            position: absolute;
+            bottom: 20%;
+            width: 200px;
+            height: 3px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        #boot-screen .boot-progress-bar {
+            height: 100%;
+            background: #fff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .context-menu {
+            position: fixed;
+            z-index: 250;
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+            border: 0.5px solid var(--glass-border);
+            padding: 6px 0;
+            min-width: 180px;
+            display: none;
+        }
+        .context-menu.show {
+            display: block;
+            animation: fadeIn 0.12s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .context-menu-item {
+            padding: 7px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-primary);
+            transition: var(--transition-fast);
+        }
+        .context-menu-item:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+        .context-menu-divider {
+            height: 0.5px;
+            background: var(--divider);
+            margin: 4px 0;
+        }
+        input,
+        textarea,
+        select,
+        button {
+            font-family: var(--font-system);
+        }
+        @media (max-width: 768px) {
+            #dock {
+                padding: 4px 6px;
+                gap: 0;
+                border-radius: 16px;
+            }
+            .dock-item {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                border-radius: 10px;
+            }
+            .window {
+                min-width: 260px;
+                min-height: 180px;
+                border-radius: var(--radius-md);
+            }
+            #spotlight-search {
+                width: 95vw;
+            }
+            #spotlight-results {
+                width: 95vw;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="boot-screen">
+        <div class="boot-logo">🍎</div>
+        <div class="boot-progress"><div class="boot-progress-bar" id="boot-bar"></div></div>
+    </div>
+
+    <div id="login-screen">
+        <div class="login-avatar">👤</div>
+        <div class="login-name">User</div>
+        <input type="password" class="login-input" id="login-password" placeholder="Enter Password" value="">
+        <button class="login-btn" id="login-btn">Log In</button>
+        <p style="color:#888;font-size:11px;margin-top:8px;">Hint: any password works</p>
+    </div>
+
+    <div id="desktop">
+        <div id="desktop-icons"></div>
+    </div>
+
+    <div id="menu-bar">
+        <span class="apple-menu" id="apple-menu-btn" title="Apple Menu">🍎</span>
+        <span style="font-weight:600;margin-left:4px;font-size:12px;">Finder</span>
+        <span style="margin-left:12px;font-size:12px;opacity:0.7;">File</span>
+        <span style="margin-left:8px;font-size:12px;opacity:0.7;">Edit</span>
+        <span style="margin-left:8px;font-size:12px;opacity:0.7;">View</span>
+        <span style="margin-left:8px;font-size:12px;opacity:0.7;">Go</span>
+        <span style="margin-left:8px;font-size:12px;opacity:0.7;">Window</span>
+        <span style="margin-left:8px;font-size:12px;opacity:0.7;">Help</span>
+        <span class="menu-spacer"></span>
+        <span class="menu-status">
+            <span id="wifi-status" title="WiFi">📶</span>
+            <span id="battery-status" title="Battery">🔋 85%</span>
+            <span id="volume-indicator" title="Volume">🔊</span>
+            <span id="clock-display" title="Date & Time"></span>
+            <span id="cc-toggle-btn" title="Control Center" style="font-size:15px;">⚙️</span>
+        </span>
+    </div>
+
+    <div id="dock"></div>
+
+    <div id="spotlight-overlay">
+        <div style="display:flex;flex-direction:column;align-items:center;width:100%;">
+            <div id="spotlight-search">
+                <span class="spotlight-icon">🔍</span>
+                <input type="text" id="spotlight-input" placeholder="Spotlight Search" autocomplete="off">
+            </div>
+            <div id="spotlight-results"></div>
+        </div>
+    </div>
+
+    <div id="notification-center">
+        <h3>Notifications</h3>
+        <div id="notification-list" style="color:var(--text-secondary);font-size:13px;">No new notifications</div>
+    </div>
+    <div id="control-center-overlay"></div>
+    <div id="control-center">
+        <h4 style="color:var(--text-primary);margin-bottom:10px;font-size:14px;">Control Center</h4>
+        <div class="cc-row">
+            <button class="cc-toggle active" id="cc-wifi">📶 WiFi</button>
+            <button class="cc-toggle active" id="cc-bluetooth">📱 BT</button>
+            <button class="cc-toggle" id="cc-airdrop">📤 AirDrop</button>
+        </div>
+        <div class="cc-row">
+            <button class="cc-toggle" id="cc-darkmode">🌙 Dark Mode</button>
+        </div>
+        <label style="color:var(--text-primary);font-size:11px;">Brightness</label>
+        <input type="range" class="cc-slider" id="cc-brightness" min="30" max="100" value="85">
+        <label style="color:var(--text-primary);font-size:11px;">Volume</label>
+        <input type="range" class="cc-slider" id="cc-volume" min="0" max="100" value="60">
+    </div>
+
+    <div class="context-menu" id="context-menu"></div>
+
+    <script>
+        (function() {
+            // ──────────────────────────────────────
+            // CORE STATE
+            // ──────────────────────────────────────
+            const state = {
+                theme: localStorage.getItem('macos-theme') || 'light',
+                windows: [],
+                windowIdCounter: 1,
+                activeWindowId: null,
+                zIndexCounter: 10,
+                dockApps: [],
+                runningApps: new Set(),
+                files: JSON.parse(localStorage.getItem('macos-files') || '{}'),
+                notes: JSON.parse(localStorage.getItem('macos-notes') || '[]'),
+                settings: JSON.parse(localStorage.getItem('macos-settings') ||
+                    '{"wifi":true,"bluetooth":true,"airdrop":false,"brightness":85,"volume":60}'),
+                notifications: [],
+                clipboard: '',
+                desktopIcons: [
+                    { id: 'finder', name: 'Finder', icon: '📁', app: 'finder' },
+                    { id: 'notes', name: 'Notes', icon: '📝', app: 'notes' },
+                    { id: 'safari', name: 'Safari', icon: '🌐', app: 'safari' },
+                    { id: 'photos', name: 'Photos', icon: '🖼️', app: 'photos' },
+                    { id: 'trash', name: 'Trash', icon: '🗑️', app: 'trash' },
+                ],
+                multiplayerUsers: [],
+                multiplayerCursors: {},
+            };
+
+            // Initialize files if empty
+            if (Object.keys(state.files).length === 0) {
+                state.files = {
+                    'home': { type: 'folder', name: 'Home', children: {}, path: '/home' },
+                    'documents': { type: 'folder', name: 'Documents', children: {}, path: '/documents' },
+                    'downloads': { type: 'folder', name: 'Downloads', children: {}, path: '/downloads' },
+                    'desktop': { type: 'folder', name: 'Desktop', children: {}, path: '/desktop' },
+                    'readme.txt': { type: 'file', name: 'readme.txt', content: 'Welcome to macOS Simulator!',
+                        path: '/readme.txt' },
+                };
+                saveFiles();
+            }
+
+            function saveFiles() {
+                try { localStorage.setItem('macos-files', JSON.stringify(state.files)); } catch (e) {}
+            }
+
+            function saveNotes() {
+                try { localStorage.setItem('macos-notes', JSON.stringify(state.notes)); } catch (e) {}
+            }
+
+            function saveSettings() {
+                try { localStorage.setItem('macos-settings', JSON.stringify(state.settings)); } catch (e) {}
+            }
+
+            function saveTheme() {
+                try { localStorage.setItem('macos-theme', state.theme); } catch (e) {}
+            }
+
+            // ──────────────────────────────────────
+            // DOM REFS
+            // ──────────────────────────────────────
+            const $desktop = document.getElementById('desktop');
+            const $desktopIcons = document.getElementById('desktop-icons');
+            const $dock = document.getElementById('dock');
+            const $menuBar = document.getElementById('menu-bar');
+            const $spotlightOverlay = document.getElementById('spotlight-overlay');
+            const $spotlightInput = document.getElementById('spotlight-input');
+            const $spotlightResults = document.getElementById('spotlight-results');
+            const $notificationCenter = document.getElementById('notification-center');
+            const $notificationList = document.getElementById('notification-list');
+            const $controlCenter = document.getElementById('control-center');
+            const $controlOverlay = document.getElementById('control-center-overlay');
+            const $contextMenu = document.getElementById('context-menu');
+            const $clockDisplay = document.getElementById('clock-display');
+            const $loginScreen = document.getElementById('login-screen');
+            const $bootScreen = document.getElementById('boot-screen');
+            const $bootBar = document.getElementById('boot-bar');
+
+            // ──────────────────────────────────────
+            // BOOT & LOGIN
+            // ──────────────────────────────────────
+            function simulateBoot() {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 25 + 8;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        $bootBar.style.width = '100%';
+                        setTimeout(() => {
+                            $bootScreen.classList.add('hidden');
+                            setTimeout(() => $bootScreen.remove(), 600);
+                        }, 400);
+                    }
+                    $bootBar.style.width = Math.min(progress, 100) + '%';
+                }, 250);
+            }
+
+            document.getElementById('login-btn').addEventListener('click', () => {
+                $loginScreen.classList.add('hidden');
+                setTimeout(() => $loginScreen.remove(), 600);
+                initDesktop();
+                showNotification('Welcome!', 'Logged in successfully', 'success');
+            });
+            document.getElementById('login-password').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('login-btn').click();
+            });
+
+            // ──────────────────────────────────────
+            // INITIALIZATION
+            // ──────────────────────────────────────
+            function initDesktop() {
+                applyTheme();
+                renderDesktopIcons();
+                renderDock();
+                updateClock();
+                setInterval(updateClock, 10000);
+                initSpotlight();
+                initControlCenter();
+                initContextMenu();
+                initKeyboardShortcuts();
+                initMultiplayer();
+                // Restore any saved windows (notes mainly)
+                if (state.notes.length > 0 && !state.runningApps.has('notes')) {
+                    // Don't auto-open, just ensure data is ready
+                }
+            }
+
+            function applyTheme() {
+                document.documentElement.setAttribute('data-theme', state.theme);
+                document.getElementById('cc-darkmode').classList.toggle('active', state.theme === 'dark');
+                document.getElementById('cc-darkmode').textContent = state.theme === 'dark' ? '☀️ Light Mode' :
+                    '🌙 Dark Mode';
+                saveTheme();
+            }
+
+            function updateClock() {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                $clockDisplay.textContent = dateStr + ' ' + timeStr;
+            }
+
+            // ──────────────────────────────────────
+            // DESKTOP ICONS
+            // ──────────────────────────────────────
+            function renderDesktopIcons() {
+                $desktopIcons.innerHTML = '';
+                state.desktopIcons.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'desktop-icon';
+                    div.innerHTML = `<div class="icon-img">${item.icon}</div><span>${item.name}</span>`;
+                    div.addEventListener('dblclick', () => openApp(item.app));
+                    div.addEventListener('click', () => {
+                        document.querySelectorAll('.desktop-icon').forEach(d => d.style.background =
+                            '');
+                        div.style.background = 'rgba(255,255,255,0.22)';
+                    });
+                    $desktopIcons.appendChild(div);
+                });
+            }
+
+            // ──────────────────────────────────────
+            // DOCK
+            // ──────────────────────────────────────
+            const dockAppDefs = [
+                { id: 'finder', name: 'Finder', icon: '📁' },
+                { id: 'safari', name: 'Safari', icon: '🌐' },
+                { id: 'notes', name: 'Notes', icon: '📝' },
+                { id: 'photos', name: 'Photos', icon: '🖼️' },
+                { id: 'music', name: 'Music', icon: '🎵' },
+                { id: 'calculator', name: 'Calculator', icon: '🔢' },
+                { id: 'calendar', name: 'Calendar', icon: '📅' },
+                { id: 'terminal', name: 'Terminal', icon: '💻' },
+                { id: 'weather', name: 'Weather', icon: '🌤️' },
+                { id: 'clock-app', name: 'Clock', icon: '🕐' },
+                { id: 'system-monitor', name: 'Monitor', icon: '📊' },
+                { id: 'settings', name: 'Settings', icon: '⚙️' },
+            ];
+
+            function renderDock() {
+                $dock.innerHTML = '';
+                dockAppDefs.forEach((app, i) => {
+                    if (i === 8) {
+                        const div = document.createElement('div');
+                        div.className = 'dock-divider';
+                        $dock.appendChild(div);
+                    }
+                    const item = document.createElement('div');
+                    item.className = 'dock-item';
+                    if (state.runningApps.has(app.id)) item.classList.add('running');
+                    item.textContent = app.icon;
+                    item.title = app.name;
+                    item.addEventListener('click', () => openApp(app.id));
+                    item.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        showContextMenu(e.clientX, e.clientY, [
+                            { label: 'Open ' + app.name, action: () => openApp(app.id) },
+                            { label: 'Keep in Dock', action: () => {} },
+                        ]);
+                    });
+                    $dock.appendChild(item);
+                    state.dockApps.push({ ...app, el: item });
+                });
+                // Trash at end
+                const trashDiv = document.createElement('div');
+                trashDiv.className = 'dock-divider';
+                $dock.appendChild(trashDiv);
+                const trash = document.createElement('div');
+                trash.className = 'dock-item';
+                trash.textContent = '🗑️';
+                trash.title = 'Trash';
+                trash.addEventListener('click', () => openApp('trash'));
+                $dock.appendChild(trash);
+            }
+
+            function updateDockIndicators() {
+                const items = $dock.querySelectorAll('.dock-item');
+                items.forEach(item => {
+                    const appId = dockAppDefs.find(d => d.icon === item.textContent)?.id;
+                    if (appId && state.runningApps.has(appId)) {
+                        item.classList.add('running');
+                    } else if (item.textContent === '🗑️') {
+                        // trash always
+                    } else if (appId) {
+                        item.classList.remove('running');
+                    }
+                });
+            }
+
+            // ──────────────────────────────────────
+            // WINDOW MANAGER
+            // ──────────────────────────────────────
+            function createWindow(appId, title, content, width = 700, height = 480) {
+                const id = 'win-' + state.windowIdCounter++;
+                const win = document.createElement('div');
+                win.className = 'window focused';
+                win.id = id;
+                win.style.width = width + 'px';
+                win.style.height = height + 'px';
+                win.style.left = (80 + (state.windowIdCounter * 30) % 300) + 'px';
+                win.style.top = (50 + (state.windowIdCounter * 25) % 200) + 'px';
+                win.style.zIndex = ++state.zIndexCounter;
+                win.dataset.appId = appId;
+
+                win.innerHTML = `
+            <div class="window-header" data-win-id="${id}">
+              <div class="window-buttons">
+                <button class="win-btn close" data-action="close" title="Close"></button>
+                <button class="win-btn minimize" data-action="minimize" title="Minimize"></button>
+                <button class="win-btn maximize" data-action="maximize" title="Maximize"></button>
+              </div>
+              <span class="window-title">${title}</span>
+              <div style="width:40px;"></div>
+            </div>
+            <div class="window-body">${content}</div>
+            <div class="resize-handle"></div>
+          `;
+
+                $desktop.appendChild(win);
+                state.windows.push({ id, appId, el: win, title, minimized: false });
+                state.activeWindowId = id;
+                state.runningApps.add(appId);
+                updateDockIndicators();
+                bringToFront(win);
+                initWindowEvents(win, id);
+                return win;
+            }
+
+            function initWindowEvents(win, id) {
+                const header = win.querySelector('.window-header');
+                const resizeHandle = win.querySelector('.resize-handle');
+                const buttons = win.querySelectorAll('.win-btn');
+
+                // Dragging
+                let dragX, dragY, startLeft, startTop, dragging = false;
+                header.addEventListener('mousedown', (e) => {
+                    if (e.target.closest('.win-btn')) return;
+                    dragging = true;
+                    dragX = e.clientX;
+                    dragY = e.clientY;
+                    startLeft = parseInt(win.style.left) || 0;
+                    startTop = parseInt(win.style.top) || 0;
+                    win.style.transition = 'none';
+                    e.preventDefault();
+                });
+                document.addEventListener('mousemove', (e) => {
+                    if (!dragging) return;
+                    const dx = e.clientX - dragX;
+                    const dy = e.clientY - dragY;
+                    win.style.left = Math.max(-100, Math.min(window.innerWidth - 150, startLeft + dx)) + 'px';
+                    win.style.top = Math.max(0, Math.min(window.innerHeight - 60, startTop + dy)) + 'px';
+                });
+                document.addEventListener('mouseup', () => {
+                    if (dragging) {
+                        dragging = false;
+                        win.style.transition = '';
+                    }
+                });
+
+                // Resizing
+                let resizing = false,
+                    rsX, rsY, rsW, rsH;
+                resizeHandle.addEventListener('mousedown', (e) => {
+                    resizing = true;
+                    rsX = e.clientX;
+                    rsY = e.clientY;
+                    rsW = parseInt(win.style.width) || 700;
+                    rsH = parseInt(win.style.height) || 480;
+                    win.style.transition = 'none';
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+                document.addEventListener('mousemove', (e) => {
+                    if (!resizing) return;
+                    const nw = Math.max(320, rsW + (e.clientX - rsX));
+                    const nh = Math.max(240, rsH + (e.clientY - rsY));
+                    win.style.width = nw + 'px';
+                    win.style.height = nh + 'px';
+                });
+                document.addEventListener('mouseup', () => {
+                    if (resizing) {
+                        resizing = false;
+                        win.style.transition = '';
+                    }
+                });
+
+                // Buttons
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const action = btn.dataset.action;
+                        if (action === 'close') closeWindow(id);
+                        if (action === 'minimize') minimizeWindow(id);
+                        if (action === 'maximize') maximizeWindow(id);
+                    });
+                });
+
+                // Focus on click
+                win.addEventListener('mousedown', () => {
+                    bringToFront(win);
+                    state.activeWindowId = id;
+                    document.querySelectorAll('.window').forEach(w => w.classList.remove(
+                        'focused'));
+                    win.classList.add('focused');
+                });
+            }
+
+            function bringToFront(win) {
+                win.style.zIndex = ++state.zIndexCounter;
+                state.activeWindowId = win.id;
+                document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
+                win.classList.add('focused');
+            }
+
+            function closeWindow(id) {
+                const winData = state.windows.find(w => w.id === id);
+                if (!winData) return;
+                const win = winData.el;
+                win.classList.add('closing');
+                setTimeout(() => {
+                    win.remove();
+                    state.windows = state.windows.filter(w => w.id !== id);
+                    // Check if app still has windows
+                    const appId = winData.appId;
+                    const stillRunning = state.windows.some(w => w.appId === appId);
+                    if (!stillRunning) state.runningApps.delete(appId);
+                    updateDockIndicators();
+                    if (state.activeWindowId === id) {
+                        const remaining = state.windows[state.windows.length - 1];
+                        state.activeWindowId = remaining ? remaining.id : null;
+                    }
+                }, 200);
+            }
+
+            function minimizeWindow(id) {
+                const winData = state.windows.find(w => w.id === id);
+                if (!winData) return;
+                winData.el.classList.add('minimized');
+                winData.minimized = true;
+                setTimeout(() => {
+                    if (winData.minimized && winData.el.parentNode) {
+                        winData.el.style.display = 'none';
+                    }
+                }, 350);
+            }
+
+            function restoreWindow(id) {
+                const winData = state.windows.find(w => w.id === id);
+                if (!winData) return;
+                winData.el.style.display = '';
+                winData.el.classList.remove('minimized');
+                winData.minimized = false;
+                bringToFront(winData.el);
+            }
+
+            function maximizeWindow(id) {
+                const winData = state.windows.find(w => w.id === id);
+                if (!winData) return;
+                const win = winData.el;
+                if (win.style.width === '100%' && win.style.height === 'calc(100% - 28px)') {
+                    win.style.width = '700px';
+                    win.style.height = '480px';
+                    win.style.left = '100px';
+                    win.style.top = '60px';
+                } else {
+                    win.style.width = '100%';
+                    win.style.height = 'calc(100% - 28px)';
+                    win.style.left = '0';
+                    win.style.top = '28px';
+                    win.style.borderRadius = '0';
+                    setTimeout(() => { win.style.borderRadius = ''; }, 300);
+                }
+            }
+
+            function openApp(appId) {
+                // If already has a minimized window, restore it
+                const existing = state.windows.find(w => w.appId === appId && w.minimized);
+                if (existing) {
+                    restoreWindow(existing.id);
+                    return;
+                }
+                // If already open and visible, bring to front
+                const visible = state.windows.find(w => w.appId === appId && !w.minimized);
+                if (visible) {
+                    bringToFront(visible.el);
+                    return;
+                }
+
+                switch (appId) {
+                    case 'finder':
+                        openFinder();
+                        break;
+                    case 'notes':
+                        openNotes();
+                        break;
+                    case 'safari':
+                        openSafari();
+                        break;
+                    case 'photos':
+                        openPhotos();
+                        break;
+                    case 'music':
+                        openMusic();
+                        break;
+                    case 'calculator':
+                        openCalculator();
+                        break;
+                    case 'calendar':
+                        openCalendar();
+                        break;
+                    case 'terminal':
+                        openTerminal();
+                        break;
+                    case 'weather':
+                        openWeather();
+                        break;
+                    case 'clock-app':
+                        openClockApp();
+                        break;
+                    case 'system-monitor':
+                        openSystemMonitor();
+                        break;
+                    case 'settings':
+                        openSettings();
+                        break;
+                    case 'trash':
+                        openTrash();
+                        break;
+                    default:
+                        showNotification('App', 'Opening ' + appId, 'info');
+                }
+            }
+
+            // ──────────────────────────────────────
+            // FINDER
+            // ──────────────────────────────────────
+            let finderCurrentPath = '/home';
+            let finderViewMode = 'grid';
+
+            function openFinder() {
+                const content = buildFinderContent();
+                const win = createWindow('finder', 'Finder', content, 750, 520);
+                // Store path in dataset
+                win.dataset.finderPath = finderCurrentPath;
+                initFinderEvents(win);
+            }
+
+            function buildFinderContent() {
+                const folder = getFolderByPath(finderCurrentPath);
+                const pathParts = finderCurrentPath.split('/').filter(Boolean);
+                const breadcrumb = pathParts.length === 0 ? 'Root' :
+                    '📁 ' + pathParts.map((p, i) => {
+                        const partial = '/' + pathParts.slice(0, i + 1).join('/');
+                        return `<span class="breadcrumb-link" data-path="${partial}" style="cursor:pointer;color:var(--accent);">${p}</span>`;
+                    }).join(' › ');
+
+                let itemsHtml = '';
+                if (folder && folder.children) {
+                    const entries = Object.entries(folder.children);
+                    if (entries.length === 0) {
+                        itemsHtml = '<p style="color:var(--text-secondary);padding:20px;">Empty folder</p>';
+                    } else {
+                        itemsHtml = '<div class="finder-grid" style="display:flex;flex-wrap:wrap;gap:12px;">';
+                        entries.forEach(([key, item]) => {
+                            const icon = item.type === 'folder' ? '📁' : '📄';
+                            itemsHtml += `
+                    <div class="finder-item" data-name="${key}" data-type="${item.type}" 
+                         style="width:80px;text-align:center;cursor:pointer;padding:8px;border-radius:8px;transition:background 0.12s;"
+                         onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background=''">
+                      <div style="font-size:36px;">${icon}</div>
+                      <div style="font-size:11px;word-break:break-all;color:var(--text-primary);">${item.name||key}</div>
+                    </div>`;
+                        });
+                        itemsHtml += '</div>';
+                    }
+                } else {
+                    itemsHtml = '<p style="color:var(--text-secondary);">Folder not found</p>';
+                }
+
+                return `
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+              <button class="finder-nav-btn" data-action="back" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px;">← Back</button>
+              <button class="finder-nav-btn" data-action="home" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px;">🏠 Home</button>
+              <span style="font-size:12px;color:var(--text-secondary);">${breadcrumb}</span>
+              <span style="flex:1;"></span>
+              <button class="finder-view-btn" data-view="grid" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 8px;cursor:pointer;">🔲</button>
+              <button class="finder-view-btn" data-view="list" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 8px;cursor:pointer;">📋</button>
+              <button class="finder-new-folder-btn" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;">+ New Folder</button>
+            </div>
+            <div style="margin-bottom:8px;">
+              <input type="text" class="finder-search-input" placeholder="Search files..." style="width:100%;padding:7px 12px;border-radius:8px;border:1px solid var(--divider);background:var(--input-bg);color:var(--text-primary);font-size:12px;outline:none;">
+            </div>
+            <div class="finder-items-container">${itemsHtml}</div>`;
+            }
+
+            function getFolderByPath(path) {
+                if (path === '/' || path === '') {
+                    return { type: 'folder', name: 'Root', children: state.files, path: '/' };
+                }
+                const parts = path.split('/').filter(Boolean);
+                let current = { children: state.files };
+                for (const part of parts) {
+                    if (!current.children || !current.children[part]) return null;
+                    current = current.children[part];
+                    if (current.type !== 'folder') return null;
+                }
+                return current;
+            }
+
+            function initFinderEvents(win) {
+                const body = win.querySelector('.window-body');
+                body.addEventListener('click', (e) => {
+                    const navBtn = e.target.closest('.finder-nav-btn');
+                    if (navBtn) {
+                        if (navBtn.dataset.action === 'back') {
+                            const parts = finderCurrentPath.split('/').filter(Boolean);
+                            parts.pop();
+                            finderCurrentPath = '/' + parts.join('/');
+                            if (finderCurrentPath === '') finderCurrentPath = '/';
+                        } else if (navBtn.dataset.action === 'home') {
+                            finderCurrentPath = '/home';
+                        }
+                        refreshFinderWindow(win);
+                        return;
+                    }
+                    const viewBtn = e.target.closest('.finder-view-btn');
+                    if (viewBtn) {
+                        finderViewMode = viewBtn.dataset.view;
+                        refreshFinderWindow(win);
+                        return;
+                    }
+                    const newFolderBtn = e.target.closest('.finder-new-folder-btn');
+                    if (newFolderBtn) {
+                        const name = prompt('New folder name:');
+                        if (name && name.trim()) {
+                            const folder = getFolderByPath(finderCurrentPath);
+                            if (folder && folder.children) {
+                                const safeName = name.trim().replace(/[^a-zA-Z0-9 _-]/g, '');
+                                folder.children[safeName] = { type: 'folder', name: safeName, children: {},
+                                    path: finderCurrentPath + '/' + safeName };
+                                saveFiles();
+                                refreshFinderWindow(win);
+                            }
+                        }
+                        return;
+                    }
+                    const item = e.target.closest('.finder-item');
+                    if (item) {
+                        const name = item.dataset.name;
+                        const type = item.dataset.type;
+                        if (type === 'folder') {
+                            finderCurrentPath = finderCurrentPath.replace(/\/$/, '') + '/' + name;
+                            refreshFinderWindow(win);
+                        } else {
+                            // Open file
+                            const file = getFolderByPath(finderCurrentPath)?.children?.[name];
+                            if (file && file.content) {
+                                alert('File content:\n\n' + file.content);
+                            }
+                        }
+                        return;
+                    }
+                    const breadcrumbLink = e.target.closest('.breadcrumb-link');
+                    if (breadcrumbLink) {
+                        finderCurrentPath = breadcrumbLink.dataset.path;
+                        refreshFinderWindow(win);
+                        return;
+                    }
+                });
+                // Search
+                const searchInput = body.querySelector('.finder-search-input');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        const query = e.target.value.toLowerCase();
+                        const itemsContainer = body.querySelector('.finder-items-container');
+                        const allItems = itemsContainer.querySelectorAll('.finder-item');
+                        allItems.forEach(item => {
+                            const name = (item.dataset.name || '').toLowerCase();
+                            item.style.display = name.includes(query) ? '' : 'none';
+                        });
+                    });
+                }
+                // Context menu on items
+                body.addEventListener('contextmenu', (e) => {
+                    const item = e.target.closest('.finder-item');
+                    if (item) {
+                        e.preventDefault();
+                        const name = item.dataset.name;
+                        showContextMenu(e.clientX, e.clientY, [
+                            { label: 'Rename', action: () => renameFinderItem(name, win) },
+                            { label: 'Delete', action: () => deleteFinderItem(name, win) },
+                            { label: 'Copy', action: () => { state.clipboard = name;
+                                    showNotification('Copied', name); } },
+                        ]);
+                    }
+                });
+                // Drag and drop
+                body.addEventListener('dragover', (e) => e.preventDefault());
+                body.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const draggedName = e.dataTransfer.getData('text/plain');
+                    if (draggedName) {
+                        moveFinderItem(draggedName, finderCurrentPath, win);
+                    }
+                });
+                const items = body.querySelectorAll('.finder-item');
+                items.forEach(item => {
+                    item.draggable = true;
+                    item.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', item.dataset.name);
+                    });
+                });
+            }
+
+            function refreshFinderWindow(win) {
+                win.querySelector('.window-body').innerHTML = buildFinderContent();
+                initFinderEvents(win);
+                win.dataset.finderPath = finderCurrentPath;
+            }
+
+            function renameFinderItem(name, win) {
+                const newName = prompt('Rename to:', name);
+                if (newName && newName.trim() && newName !== name) {
+                    const folder = getFolderByPath(finderCurrentPath);
+                    if (folder && folder.children && folder.children[name]) {
+                        const item = folder.children[name];
+                        delete folder.children[name];
+                        item.name = newName.trim();
+                        folder.children[newName.trim()] = item;
+                        saveFiles();
+                        refreshFinderWindow(win);
+                    }
+                }
+            }
+
+            function deleteFinderItem(name, win) {
+                if (confirm('Delete "' + name + '"?')) {
+                    const folder = getFolderByPath(finderCurrentPath);
+                    if (folder && folder.children && folder.children[name]) {
+                        delete folder.children[name];
+                        saveFiles();
+                        refreshFinderWindow(win);
+                        showNotification('Deleted', name + ' moved to Trash', 'warning');
+                    }
+                }
+            }
+
+            function moveFinderItem(name, targetPath, win) {
+                const sourceFolder = getFolderByPath(finderCurrentPath);
+                const targetFolder = getFolderByPath(targetPath);
+                if (sourceFolder?.children?.[name] && targetFolder?.children) {
+                    targetFolder.children[name] = sourceFolder.children[name];
+                    delete sourceFolder.children[name];
+                    saveFiles();
+                    refreshFinderWindow(win);
+                    showNotification('Moved', name + ' moved to ' + targetPath);
+                }
+            }
+
+            // ──────────────────────────────────────
+            // NOTES APP
+            // ──────────────────────────────────────
+            function openNotes() {
+                const notesList = state.notes.map((n, i) => `
+            <div class="note-item" data-index="${i}" style="padding:10px;border-radius:8px;cursor:pointer;margin-bottom:4px;transition:background 0.12s;border:0.5px solid var(--divider);"
+                 onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background=''">
+              <strong style="font-size:13px;">${escapeHtml(n.title||'Untitled')}</strong>
+              <p style="font-size:11px;color:var(--text-secondary);margin:2px 0;">${escapeHtml((n.content||'').substring(0,60))}</p>
+              <span style="font-size:10px;color:var(--text-secondary);">${n.date||''}</span>
+            </div>`).join('') || '<p style="color:var(--text-secondary);">No notes yet. Click + to create one.</p>';
+
+                const content = `
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <button class="new-note-btn" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;">+ New Note</button>
+              <input type="text" class="notes-search" placeholder="Search notes..." style="flex:1;padding:7px 12px;border-radius:8px;border:1px solid var(--divider);background:var(--input-bg);color:var(--text-primary);font-size:12px;outline:none;">
+            </div>
+            <div class="notes-list" style="max-height:300px;overflow-y:auto;">${notesList}</div>
+            <div class="note-editor" style="display:none;margin-top:10px;">
+              <input type="text" class="note-title-input" placeholder="Title" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--divider);background:var(--input-bg);color:var(--text-primary);font-size:14px;font-weight:600;margin-bottom:6px;outline:none;">
+              <textarea class="note-content-input" placeholder="Write your note..." style="width:100%;height:180px;padding:8px;border-radius:8px;border:1px solid var(--divider);background:var(--input-bg);color:var(--text-primary);font-size:13px;resize:vertical;outline:none;font-family:var(--font-system);"></textarea>
+              <div style="display:flex;gap:6px;margin-top:6px;">
+                <button class="save-note-btn" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;">Save</button>
+                <button class="delete-note-btn" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;">Delete</button>
+                <button class="cancel-note-btn" style="background:var(--surface-secondary);color:var(--text-primary);border:none;border-radius:6px;padding:6px 14px;cursor:pointer;">Cancel</button>
+              </div>
+            </div>`;
+                const win = createWindow('notes', 'Notes', content, 600, 500);
+                initNotesEvents(win);
+            }
+
+            function initNotesEvents(win) {
+                const body = win.querySelector('.window-body');
+                let editingIndex = -1;
+                const notesList = body.querySelector('.notes-list');
+                const editor = body.querySelector('.note-editor');
+                const titleInput = body.querySelector('.note-title-input');
+                const contentInput = body.querySelector('.note-content-input');
+
+                body.querySelector('.new-note-btn').addEventListener('click', () => {
+                    editingIndex = -1;
+                    titleInput.value = '';
+                    contentInput.value = '';
+                    editor.style.display = 'block';
+                    titleInput.focus();
+                });
+                body.querySelector('.save-note-btn').addEventListener('click', () => {
+                    const title = titleInput.value.trim() || 'Untitled';
+                    const content = contentInput.value;
+                    const date = new Date().toLocaleString();
+                    if (editingIndex >= 0 && editingIndex < state.notes.length) {
+                        state.notes[editingIndex] = { title, content, date };
+                    } else {
+                        state.notes.push({ title, content, date });
+                    }
+                    saveNotes();
+                    editor.style.display = 'none';
+                    refreshNotesWindow(win);
+                });
+                body.querySelector('.delete-note-btn').addEventListener('click', () => {
+                    if (editingIndex >= 0 && editingIndex < state.notes.length) {
+                        state.notes.splice(editingIndex, 1);
+                        saveNotes();
+                        editor.style.display = 'none';
+                        refreshNotesWindow(win);
+                    }
+                });
+                body.querySelector('.cancel-note-btn').addEventListener('click', () => {
+                    editor.style.display = 'none';
+                });
+                notesList.addEventListener('click', (e) => {
+                    const noteItem = e.target.closest('.note-item');
+                    if (noteItem) {
+                        const idx = parseInt(noteItem.dataset.index);
+                        if (idx >= 0 && idx < state.notes.length) {
+                            editingIndex = idx;
+                            titleInput.value = state.notes[idx].title || '';
+                            contentInput.value = state.notes[idx].content || '';
+                            editor.style.display = 'block';
+                        }
+                    }
+                });
+                const searchInput = body.querySelector('.notes-search');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        const q = e.target.value.toLowerCase();
+                        notesList.querySelectorAll('.note-item').forEach(item => {
+                            const text = item.textContent.toLowerCase();
+                            item.style.display = text.includes(q) ? '' : 'none';
+                        });
+                    });
+                }
+            }
+
+            function refreshNotesWindow(win) {
+                const notesList = state.notes.map((n, i) => `
+            <div class="note-item" data-index="${i}" style="padding:10px;border-radius:8px;cursor:pointer;margin-bottom:4px;transition:background 0.12s;border:0.5px solid var(--divider);">
+              <strong style="font-size:13px;">${escapeHtml(n.title||'Untitled')}</strong>
+              <p style="font-size:11px;color:var(--text-secondary);margin:2px 0;">${escapeHtml((n.content||'').substring(0,60))}</p>
+              <span style="font-size:10px;color:var(--text-secondary);">${n.date||''}</span>
+            </div>`).join('') || '<p style="color:var(--text-secondary);">No notes yet.</p>';
+                win.querySelector('.notes-list').innerHTML = notesList;
+                initNotesEvents(win);
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ──────────────────────────────────────
+            // SAFARI
+            // ──────────────────────────────────────
+            function openSafari() {
+                const content = `
+            <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+              <button class="safari-back" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;">←</button>
+              <button class="safari-fwd" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;">→</button>
+              <input type="text" class="safari-url" value="https://example.com" style="flex:1;padding:7px 12px;border-radius:8px;border:1px solid var(--divider);background:var(--input-bg);color:var(--text-primary);font-size:12px;outline:none;">
+              <button class="safari-go" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;">Go</button>
+            </div>
+            <div class="safari-content" style="border:1px solid var(--divider);border-radius:8px;padding:20px;min-height:300px;background:var(--surface-secondary);overflow:auto;">
+              <h2>🌐 Welcome to Safari</h2>
+              <p>This is a simulated browser view. Enter a URL above to "navigate".</p>
+              <p style="color:var(--text-secondary);">Try: example.com, google.com, or any text</p>
+              <div class="safari-rendered"></div>
+            </div>`;
+                const win = createWindow('safari', 'Safari', content, 750, 500);
+                initSafariEvents(win);
+            }
+
+            function initSafariEvents(win) {
+                const urlInput = win.querySelector('.safari-url');
+                const goBtn = win.querySelector('.safari-go');
+                const rendered = win.querySelector('.safari-rendered');
+                const navigate = () => {
+                    const url = urlInput.value.trim();
+                    rendered.innerHTML =
+                        `<h3>📍 ${escapeHtml(url)}</h3><p>Simulated page content for: <strong>${escapeHtml(url)}</strong></p><p style="color:var(--text-secondary);">This is a local simulation. No actual network requests are made.</p><div style="background:var(--surface-bg);padding:16px;border-radius:8px;margin-top:10px;"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p></div>`;
+                };
+                goBtn.addEventListener('click', navigate);
+                urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') navigate(); });
+                win.querySelector('.safari-back').addEventListener('click', () => {
+                    urlInput.value = 'https://example.com';
+                    navigate();
+                });
+            }
+
+            // ──────────────────────────────────────
+            // PHOTOS
+            // ──────────────────────────────────────
+            function openPhotos() {
+                const photos = [
+                    { name: 'Sunset', color: '#ff6b6b', emoji: '🌅' },
+                    { name: 'Ocean', color: '#4ecdc4', emoji: '🌊' },
+                    { name: 'Mountain', color: '#45b7d1', emoji: '🏔️' },
+                    { name: 'Forest', color: '#96ceb4', emoji: '🌲' },
+                    { name: 'Desert', color: '#ffeaa7', emoji: '🏜️' },
+                    { name: 'Aurora', color: '#a29bfe', emoji: '🌌' },
+                ];
+                const photosHtml = photos.map((p, i) => `
+            <div class="photo-thumb" data-index="${i}" style="width:120px;height:120px;background:${p.color};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:40px;cursor:pointer;transition:transform 0.2s;"
+                 onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            </div>`).join('');
+                const content = `
+            <p style="margin-bottom:10px;color:var(--text-secondary);">Photo Gallery — Click to preview</p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">${photosHtml}</div>
+            <div class="photo-preview" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.9);z-index:100;align-items:center;justify-content:center;flex-direction:column;border-radius:var(--radius-lg);">
+              <span class="photo-close" style="position:absolute;top:10px;right:20px;color:#fff;font-size:24px;cursor:pointer;">✕</span>
+              <div class="photo-full" style="font-size:120px;"></div>
+              <p class="photo-name" style="color:#fff;font-size:18px;margin-top:10px;"></p>
+            </div>`;
+                const win = createWindow('photos', 'Photos', content, 700, 480);
+                initPhotosEvents(win, photos);
+            }
+
+            function initPhotosEvents(win, photos) {
+                const preview = win.querySelector('.photo-preview');
+                const photoFull = win.querySelector('.photo-full');
+                const photoName = win.querySelector('.photo-name');
+                win.querySelectorAll('.photo-thumb').forEach(thumb => {
+                    thumb.addEventListener('click', () => {
+                        const idx = parseInt(thumb.dataset.index);
+                        photoFull.textContent = photos[idx].emoji;
+                        photoName.textContent = photos[idx].name;
+                        preview.style.display = 'flex';
+                    });
+                });
+                win.querySelector('.photo-close').addEventListener('click', () => {
+                    preview.style.display = 'none';
+                });
+            }
+
+            // ──────────────────────────────────────
+            // MUSIC PLAYER
+            // ──────────────────────────────────────
+            function openMusic() {
+                const playlist = [
+                    { title: 'Ambient Dream', artist: 'Chill Wave', duration: '3:42' },
+                    { title: 'Sunset Boulevard', artist: 'LoFi Beats', duration: '4:15' },
+                    { title: 'Neon Nights', artist: 'Synth Pop', duration: '3:28' },
+                    { title: 'Ocean Breeze', artist: 'Acoustic Soul', duration: '5:01' },
+                ];
+                const plHtml = playlist.map((t, i) => `
+            <div class="music-track" data-index="${i}" style="padding:8px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;transition:background 0.12s;"
+                 onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background=''">
+              <span>🎵 ${escapeHtml(t.title)} - ${escapeHtml(t.artist)}</span>
+              <span style="color:var(--text-secondary);font-size:11px;">${t.duration}</span>
+            </div>`).join('');
+                const content = `
+            <div style="text-align:center;margin-bottom:12px;">
+              <div style="font-size:60px;margin-bottom:8px;">🎵</div>
+              <p class="music-now-playing" style="font-weight:600;">Select a track</p>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">
+              <button class="music-prev" style="background:var(--surface-secondary);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:16px;">⏮</button>
+              <button class="music-play" style="background:var(--accent);color:#fff;border:none;border-radius:50%;width:44px;height:44px;cursor:pointer;font-size:18px;">▶</button>
+              <button class="music-next" style="background:var(--surface-secondary);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:16px;">⏭</button>
+            </div>
+            <input type="range" class="music-volume" min="0" max="100" value="70" style="width:100%;accent-color:var(--accent);">
+            <p style="font-size:11px;color:var(--text-secondary);text-align:center;">Volume</p>
+            <div class="music-playlist" style="margin-top:10px;">${plHtml}</div>`;
+                const win = createWindow('music', 'Music', content, 500, 450);
+                initMusicEvents(win, playlist);
+            }
+
+            function initMusicEvents(win, playlist) {
+                let currentTrack = -1;
+                let playing = false;
+                const nowPlaying = win.querySelector('.music-now-playing');
+                const playBtn = win.querySelector('.music-play');
+                const volumeSlider = win.querySelector('.music-volume');
+
+                win.querySelector('.music-play').addEventListener('click', () => {
+                    if (currentTrack >= 0) {
+                        playing = !playing;
+                        playBtn.textContent = playing ? '⏸' : '▶';
+                        nowPlaying.textContent = playing ? 'Playing: ' + playlist[currentTrack]
+                            .title : 'Paused';
+                    }
+                });
+                win.querySelectorAll('.music-track').forEach(track => {
+                    track.addEventListener('click', () => {
+                        currentTrack = parseInt(track.dataset.index);
+                        playing = true;
+                        playBtn.textContent = '⏸';
+                        nowPlaying.textContent = 'Playing: ' + playlist[currentTrack]
+                            .title + ' - ' + playlist[currentTrack].artist;
+                    });
+                });
+                win.querySelector('.music-next').addEventListener('click', () => {
+                    if (currentTrack < playlist.length - 1) {
+                        currentTrack++;
+                        playing = true;
+                        playBtn.textContent = '⏸';
+                        nowPlaying.textContent = 'Playing: ' + playlist[currentTrack].title;
+                    }
+                });
+                win.querySelector('.music-prev').addEventListener('click', () => {
+                    if (currentTrack > 0) {
+                        currentTrack--;
+                        playing = true;
+                        playBtn.textContent = '⏸';
+                        nowPlaying.textContent = 'Playing: ' + playlist[currentTrack].title;
+                    }
+                });
+                volumeSlider.addEventListener('input', () => {
+                    // Simulated volume
+                });
+            }
+
+            // ──────────────────────────────────────
+            // CALCULATOR
+            // ──────────────────────────────────────
+            function openCalculator() {
+                const content = `
+            <div class="calc-display" style="background:var(--surface-secondary);border-radius:10px;padding:16px;text-align:right;font-size:28px;font-weight:300;margin-bottom:10px;min-height:60px;word-break:break-all;font-family:var(--font-mono);">0</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+              ${['C','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','.','⌫','='].map(btn => 
+                `<button class="calc-btn" data-val="${btn}" style="padding:14px;border-radius:10px;border:none;font-size:16px;cursor:pointer;background:${['÷','×','−','+','='].includes(btn)?'var(--accent)': 'var(--surface-secondary)'};color:${['÷','×','−','+','='].includes(btn)?'#fff':'var(--text-primary)'};font-weight:500;transition:opacity 0.12s;">${btn}</button>`
+              ).join('')}
+            </div>
+            <button class="calc-scientific-toggle" style="margin-top:8px;background:transparent;border:1px solid var(--divider);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:11px;color:var(--text-secondary);">Scientific Mode</button>
+            <div class="calc-scientific" style="display:none;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px;">
+              ${['sin','cos','tan','log','√','π','e','^','(',')','!','mod'].map(btn =>
+                `<button class="calc-sci-btn" data-val="${btn}" style="padding:10px;border-radius:8px;border:none;font-size:12px;cursor:pointer;background:var(--surface-secondary);color:var(--text-primary);">${btn}</button>`
+              ).join('')}
+            </div>`;
+                const win = createWindow('calculator', 'Calculator', content, 380, 480);
+                initCalculatorEvents(win);
+            }
+
+            function initCalculatorEvents(win) {
+                const display = win.querySelector('.calc-display');
+                let expression = '';
+                let currentInput = '0';
+                let shouldReset = false;
+
+                function updateDisplay() {
+                    display.textContent = expression || currentInput || '0';
+                }
+
+                win.querySelectorAll('.calc-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const val = btn.dataset.val;
+                        handleCalcInput(val);
+                    });
+                });
+                win.querySelector('.calc-scientific-toggle').addEventListener('click', function() {
+                    const sci = win.querySelector('.calc-scientific');
+                    sci.style.display = sci.style.display === 'none' ? 'grid' : 'none';
+                    this.textContent = sci.style.display === 'grid' ? 'Hide Scientific' :
+                        'Scientific Mode';
+                });
+                win.querySelectorAll('.calc-sci-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const val = btn.dataset.val;
+                        if (['sin', 'cos', 'tan', 'log', '√'].includes(val)) {
+                            try {
+                                const num = parseFloat(currentInput);
+                                let result;
+                                switch (val) {
+                                    case 'sin':
+                                        result = Math.sin(num * Math.PI / 180);
+                                        break;
+                                    case 'cos':
+                                        result = Math.cos(num * Math.PI / 180);
+                                        break;
+                                    case 'tan':
+                                        result = Math.tan(num * Math.PI / 180);
+                                        break;
+                                    case 'log':
+                                        result = Math.log10(num);
+                                        break;
+                                    case '√':
+                                        result = Math.sqrt(num);
+                                        break;
+                                }
+                                currentInput = parseFloat(result.toFixed(8)).toString();
+                                expression = '';
+                                updateDisplay();
+                            } catch (e) { currentInput = 'Error'; }
+                        }
+                    });
+                });
+
+                function handleCalcInput(val) {
+                    if (val === 'C') {
+                        expression = '';
+                        currentInput = '0';
+                        shouldReset = false;
+                    } else if (val === '⌫') {
+                        if (expression) expression = expression.slice(0, -1);
+                        else currentInput = currentInput.slice(0, -1) || '0';
+                    } else if (val === '±') {
+                        if (currentInput !== '0') currentInput = (parseFloat(currentInput) * -1).toString();
+                    } else if (val === '=') {
+                        try {
+                            const full = expression + currentInput;
+                            const result = evaluateExpression(full.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g,
+                                '-'));
+                            currentInput = parseFloat(result.toFixed(8)).toString();
+                            expression = '';
+                            shouldReset = true;
+                        } catch (e) { currentInput = 'Error'; }
+                    } else if (['+', '−', '×', '÷', '%'].includes(val)) {
+                        if (shouldReset) shouldReset = false;
+                        expression += currentInput + ' ' + val + ' ';
+                        currentInput = '';
+                    } else if (val === '.') {
+                        if (!currentInput.includes('.')) currentInput += '.';
+                    } else {
+                        if (shouldReset) { currentInput = val;
+                            shouldReset = false; } else currentInput = currentInput === '0' ? val : currentInput + val;
+                    }
+                    updateDisplay();
+                }
+
+                function evaluateExpression(expr) {
+                    return Function('"use strict"; return (' + expr + ')')();
+                }
+            }
+
+            // ──────────────────────────────────────
+            // TERMINAL
+            // ──────────────────────────────────────
+            function openTerminal() {
+                const content = `
+            <div class="terminal-output" style="background:#000;color:#0f0;font-family:var(--font-mono);font-size:13px;padding:12px;border-radius:8px;min-height:280px;overflow-y:auto;white-space:pre-wrap;">
+Last login: ${new Date().toLocaleString()}
+user@macOS ~ % <span class="terminal-cursor">█</span>
+</div>
+            <div style="display:flex;margin-top:6px;gap:4px;">
+              <span style="color:#0f0;font-family:var(--font-mono);font-size:13px;line-height:28px;">$</span>
+              <input type="text" class="terminal-input" style="flex:1;background:#000;color:#0f0;border:1px solid #333;border-radius:4px;padding:4px 8px;font-family:var(--font-mono);font-size:13px;outline:none;" autofocus>
+            </div>`;
+                const win = createWindow('terminal', 'Terminal', content, 600, 420);
+                initTerminalEvents(win);
+            }
+
+            function initTerminalEvents(win) {
+                const output = win.querySelector('.terminal-output');
+                const input = win.querySelector('.terminal-input');
+                const cursor = win.querySelector('.terminal-cursor');
+                let cwd = '~';
+
+                function appendOutput(text) {
+                    const lines = output.innerHTML.split('\n');
+                    lines.pop();
+                    output.innerHTML = lines.join('\n') + '\n' + text + '\nuser@macOS ' + cwd + ' % <span class="terminal-cursor">█</span>';
+                    output.scrollTop = output.scrollHeight;
+                }
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        const cmd = input.value.trim();
+                        input.value = '';
+                        if (cmd) {
+                            const lines = output.innerHTML.split('\n');
+                            lines.pop();
+                            output.innerHTML = lines.join('\n') + '\n$ ' + cmd;
+                            processCommand(cmd);
+                        }
+                    }
+                });
+                win.querySelector('.terminal-output').addEventListener('click', () => input.focus());
+
+                function processCommand(cmd) {
+                    const parts = cmd.split(' ');
+                    const command = parts[0].toLowerCase();
+                    switch (command) {
+                        case 'help':
+                            appendOutput('Available commands: help, clear, ls, pwd, date, echo, whoami, cd, cat, mkdir');
+                            break;
+                        case 'clear':
+                            output.innerHTML =
+                                'user@macOS ~ % <span class="terminal-cursor">█</span>';
+                            break;
+                        case 'ls':
+                            const folder = getFolderByPath(cwd === '~' ? '/home' : '/' + cwd);
+                            if (folder?.children) {
+                                appendOutput(Object.keys(folder.children).join('  '));
+                            } else { appendOutput('No such directory'); }
+                            break;
+                        case 'pwd':
+                            appendOutput('/Users/user' + (cwd === '~' ? '' : '/' + cwd));
+                            break;
+                        case 'date':
+                            appendOutput(new Date().toString());
+                            break;
+                        case 'echo':
+                            appendOutput(parts.slice(1).join(' '));
+                            break;
+                        case 'whoami':
+                            appendOutput('user');
+                            break;
+                        default:
+                            appendOutput('zsh: command not found: ' + command);
+                    }
+                }
+                setTimeout(() => input.focus(), 200);
+            }
+
+            // ──────────────────────────────────────
+            // CALENDAR
+            // ──────────────────────────────────────
+            function openCalendar() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const firstDay = new Date(year, month, 1).getDay();
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+                    'October', 'November', 'December'
+                ];
+                let calHtml = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">';
+                ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
+                    calHtml +=
+                        `<div style="font-weight:600;font-size:11px;padding:6px;color:var(--text-secondary);">${d}</div>`;
+                });
+                for (let i = 0; i < firstDay; i++) calHtml += '<div></div>';
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const isToday = d === now.getDate();
+                    calHtml +=
+                        `<div style="padding:8px;border-radius:50%;cursor:pointer;${isToday?'background:var(--accent);color:#fff;font-weight:700;':''}" class="cal-day">${d}</div>`;
+                }
+                calHtml += '</div>';
+                const content = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <button class="cal-prev" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;">◀</button>
+              <strong style="font-size:16px;">${monthNames[month]} ${year}</strong>
+              <button class="cal-next" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;">▶</button>
+            </div>
+            ${calHtml}
+            <p style="margin-top:10px;font-size:12px;color:var(--text-secondary);">Events: None scheduled</p>`;
+                const win = createWindow('calendar', 'Calendar', content, 500, 420);
+                initCalendarEvents(win, year, month);
+            }
+
+            function initCalendarEvents(win, year, month) {
+                win.querySelector('.cal-prev').addEventListener('click', () => {
+                    const newMonth = month - 1;
+                    const m = newMonth < 0 ? 11 : newMonth;
+                    const y = newMonth < 0 ? year - 1 : year;
+                    refreshCalendarWindow(win, y, m);
+                });
+                win.querySelector('.cal-next').addEventListener('click', () => {
+                    const newMonth = month + 1;
+                    const m = newMonth > 11 ? 0 : newMonth;
+                    const y = newMonth > 11 ? year + 1 : year;
+                    refreshCalendarWindow(win, y, m);
+                });
+            }
+
+            function refreshCalendarWindow(win, year, month) {
+                const now = new Date();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const firstDay = new Date(year, month, 1).getDay();
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+                    'October', 'November', 'December'
+                ];
+                let calHtml = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">';
+                ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
+                    calHtml +=
+                        `<div style="font-weight:600;font-size:11px;padding:6px;color:var(--text-secondary);">${d}</div>`;
+                });
+                for (let i = 0; i < firstDay; i++) calHtml += '<div></div>';
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const isToday = d === now.getDate() && month === now.getMonth() && year === now.getFullYear();
+                    calHtml +=
+                        `<div style="padding:8px;border-radius:50%;cursor:pointer;${isToday?'background:var(--accent);color:#fff;font-weight:700;':''}">${d}</div>`;
+                }
+                calHtml += '</div>';
+                const body = win.querySelector('.window-body');
+                body.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <button class="cal-prev" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;">◀</button>
+              <strong style="font-size:16px;">${monthNames[month]} ${year}</strong>
+              <button class="cal-next" style="background:var(--surface-secondary);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;">▶</button>
+            </div>
+            ${calHtml}
+            <p style="margin-top:10px;font-size:12px;color:var(--text-secondary);">Events: None scheduled</p>`;
+                initCalendarEvents(win, year, month);
+            }
+
+            // ──────────────────────────────────────
+            // WEATHER
+            // ──────────────────────────────────────
+            function openWeather() {
+                const conditions = ['☀️ Sunny', '⛅ Partly Cloudy', '🌧️ Rainy', '❄️ Snowy', '🌤️ Clear'];
+                const randomWeather = conditions[Math.floor(Math.random() * conditions.length)];
+                const temp = Math.floor(Math.random() * 30) + 10;
+                const content = `
+            <div style="text-align:center;">
+              <div style="font-size:80px;">${randomWeather.split(' ')[0]}</div>
+              <h2 style="font-size:36px;font-weight:300;">${temp}°C</h2>
+              <p style="font-size:16px;">${randomWeather.split(' ')[1]||randomWeather}</p>
+              <p style="color:var(--text-secondary);">San Francisco, CA</p>
+              <div style="display:flex;justify-content:center;gap:20px;margin-top:16px;">
+                <div><small>Humidity</small><br>${40+Math.floor(Math.random()*30)}%</div>
+                <div><small>Wind</small><br>${5+Math.floor(Math.random()*20)} km/h</div>
+                <div><small>UV Index</small><br>${Math.floor(Math.random()*8)+1}</div>
+              </div>
+              <button class="weather-refresh" style="margin-top:14px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;">🔄 Refresh</button>
+            </div>`;
+                const win = createWindow('weather', 'Weather', content, 400, 380);
+                win.querySelector('.weather-refresh').addEventListener('click', () => {
+                    win.close ? closeWindow(win.id) : win.remove();
+                    setTimeout(() => openWeather(), 100);
+                });
+            }
+
+            // ──────────────────────────────────────
+            // CLOCK APP
+            // ──────────────────────────────────────
+            function openClockApp() {
+                const content = `
+            <div style="text-align:center;">
+              <canvas class="analog-clock" width="200" height="200" style="margin:0 auto;display:block;"></canvas>
+              <p class="digital-clock-display" style="font-size:28px;font-weight:300;margin-top:8px;font-family:var(--font-mono);"></p>
+            </div>`;
+                const win = createWindow('clock-app', 'Clock', content, 380, 360);
+                initClockAppEvents(win);
+            }
+
+            function initClockAppEvents(win) {
+                const canvas = win.querySelector('.analog-clock');
+                const digitalDisplay = win.querySelector('.digital-clock-display');
+                const ctx = canvas.getContext('2d');
+                const radius = 90;
+                const cx = 100,
+                    cy = 100;
+
+                function drawClock() {
+                    ctx.clearRect(0, 0, 200, 200);
+                    const now = new Date();
+                    const hours = now.getHours() % 12;
+                    const minutes = now.getMinutes();
+                    const seconds = now.getSeconds();
+                    // Face
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'var(--surface-secondary)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'var(--divider)';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    // Center
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = 'var(--text-primary)';
+                    ctx.fill();
+                    // Hour hand
+                    const hAngle = (hours + minutes / 60) * 30 * Math.PI / 180;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx + Math.cos(hAngle - Math.PI / 2) * radius * 0.5, cy + Math.sin(hAngle - Math.PI / 2) *
+                        radius * 0.5);
+                    ctx.strokeStyle = 'var(--text-primary)';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                    // Minute hand
+                    const mAngle = (minutes + seconds / 60) * 6 * Math.PI / 180;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx + Math.cos(mAngle - Math.PI / 2) * radius * 0.7, cy + Math.sin(mAngle - Math.PI / 2) *
+                        radius * 0.7);
+                    ctx.strokeStyle = 'var(--text-primary)';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                    // Second hand
+                    const sAngle = seconds * 6 * Math.PI / 180;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx + Math.cos(sAngle - Math.PI / 2) * radius * 0.8, cy + Math.sin(sAngle - Math.PI / 2) *
+                        radius * 0.8);
+                    ctx.strokeStyle = '#ff3b30';
+                    ctx.lineWidth = 1.2;
+                    ctx.stroke();
+                    digitalDisplay.textContent = now.toLocaleTimeString();
+                }
+                drawClock();
+                const interval = setInterval(drawClock, 1000);
+                win._clockInterval = interval;
+                // Cleanup on close
+                const origClose = win.querySelector('.win-btn.close');
+                if (origClose) {
+                    origClose.addEventListener('click', () => clearInterval(interval), { once: true });
+                }
+            }
+
+            // ──────────────────────────────────────
+            // SYSTEM MONITOR
+            // ──────────────────────────────────────
+            function openSystemMonitor() {
+                const cpu = Math.floor(Math.random() * 40) + 10;
+                const mem = Math.floor(Math.random() * 50) + 20;
+                const storage = Math.floor(Math.random() * 40) + 30;
+                const content = `
+            <h3>System Monitor</h3>
+            <div style="margin:10px 0;"><label>CPU Usage</label>
+              <div style="background:var(--divider);border-radius:10px;height:20px;overflow:hidden;">
+                <div class="cpu-bar" style="width:${cpu}%;height:100%;background:var(--accent);border-radius:10px;transition:width 0.5s;"></div>
+              </div><span class="cpu-text">${cpu}%</span></div>
+            <div style="margin:10px 0;"><label>Memory</label>
+              <div style="background:var(--divider);border-radius:10px;height:20px;overflow:hidden;">
+                <div class="mem-bar" style="width:${mem}%;height:100%;background:var(--green);border-radius:10px;transition:width 0.5s;"></div>
+              </div><span class="mem-text">${mem}%</span></div>
+            <div style="margin:10px 0;"><label>Storage</label>
+              <div style="background:var(--divider);border-radius:10px;height:20px;overflow:hidden;">
+                <div class="storage-bar" style="width:${storage}%;height:100%;background:var(--orange);border-radius:10px;transition:width 0.5s;"></div>
+              </div><span class="storage-text">${storage}%</span></div>
+            <button class="monitor-refresh" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;">Refresh</button>`;
+                const win = createWindow('system-monitor', 'System Monitor', content, 420, 340);
+                win.querySelector('.monitor-refresh').addEventListener('click', () => {
+                    const cpu = Math.floor(Math.random() * 40) + 10;
+                    const mem = Math.floor(Math.random() * 50) + 20;
+                    const storage = Math.floor(Math.random() * 40) + 30;
+                    win.querySelector('.cpu-bar').style.width = cpu + '%';
+                    win.querySelector('.cpu-text').textContent = cpu + '%';
+                    win.querySelector('.mem-bar').style.width = mem + '%';
+                    win.querySelector('.mem-text').textContent = mem + '%';
+                    win.querySelector('.storage-bar').style.width = storage + '%';
+                    win.querySelector('.storage-text').textContent = storage + '%';
+                });
+            }
+
+            // ──────────────────────────────────────
+            // SETTINGS
+            // ──────────────────────────────────────
+            function openSettings() {
+                const content = `
+            <h3>System Preferences</h3>
+            <div style="margin:8px 0;">
+              <label>Theme: </label>
+              <select class="settings-theme" style="padding:6px;border-radius:6px;border:1px solid var(--divider);background:var(--input-bg);color:var(--text-primary);">
+                <option value="light" ${state.theme==='light'?'selected':''}>Light</option>
+                <option value="dark" ${state.theme==='dark'?'selected':''}>Dark</option>
+              </select>
+            </div>
+            <div style="margin:8px 0;">
+              <label>Wallpaper: </label>
+              <select class="settings-wallpaper" style="padding:6px;border-radius:6px;border:1px solid var(--divider);background:var(--input-bg);color:var(--text-primary);">
+                <option value="default">Default</option>
+                <option value="gradient1">Gradient Blue</option>
+                <option value="gradient2">Gradient Purple</option>
+              </select>
+            </div>
+            <button class="settings-save" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;">Apply</button>`;
+                const win = createWindow('settings', 'Settings', content, 450, 300);
+                win.querySelector('.settings-save').addEventListener('click', () => {
+                    const themeSel = win.querySelector('.settings-theme').value;
+                    const wallpaper = win.querySelector('.settings-wallpaper').value;
+                    if (themeSel !== state.theme) {
+                        state.theme = themeSel;
+                        applyTheme();
+                    }
+                    if (wallpaper === 'gradient1') {
+                        $desktop.style.backgroundImage =
+                            'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    } else if (wallpaper === 'gradient2') {
+                        $desktop.style.backgroundImage =
+                            'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                    } else {
+                        $desktop.style.backgroundImage = '';
+                    }
+                    showNotification('Settings', 'Preferences applied', 'success');
+                });
+            }
+
+            // ──────────────────────────────────────
+            // TRASH
+            // ──────────────────────────────────────
+            function openTrash() {
+                const content = `
+            <div style="text-align:center;padding:30px;">
+              <div style="font-size:60px;">🗑️</div>
+              <p style="color:var(--text-secondary);">Trash is empty</p>
+              <button class="trash-empty" style="margin-top:10px;background:var(--red);color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;">Empty Trash</button>
+            </div>`;
+                createWindow('trash', 'Trash', content, 400, 300);
+            }
+
+            // ──────────────────────────────────────
+            // SPOTLIGHT
+            // ──────────────────────────────────────
+            function initSpotlight() {
+                $spotlightInput.addEventListener('input', () => {
+                    const query = $spotlightInput.value.toLowerCase().trim();
+                    if (!query) {
+                        $spotlightResults.classList.remove('show');
+                        return;
+                    }
+                    const results = [];
+                    // Search apps
+                    dockAppDefs.forEach(app => {
+                        if (app.name.toLowerCase().includes(query)) results.push({ label: 'App: ' + app.name,
+                            action: () => { closeSpotlight();
+                                openApp(app.id); } });
+                    });
+                    // Search files
+                    Object.entries(state.files).forEach(([key, file]) => {
+                        if ((file.name || key).toLowerCase().includes(query)) results.push({ label: 'File: ' + (
+                                file.name || key),
+                            action: () => { closeSpotlight();
+                                openApp('finder'); } });
+                    });
+                    // Search notes
+                    state.notes.forEach((note, i) => {
+                        if ((note.title || '').toLowerCase().includes(query) || (note.content || '')
+                            .toLowerCase().includes(query)) {
+                            results.push({ label: 'Note: ' + (note.title || 'Untitled'), action: () => {
+                                    closeSpotlight();
+                                    openApp('notes'); } });
+                        }
+                    });
+                    $spotlightResults.innerHTML = results.slice(0, 10).map(r =>
+                        `<div class="result-item">${r.label}</div>`).join('') || '<div class="result-item" style="opacity:0.5;">No results</div>';
+                    $spotlightResults.classList.add('show');
+                    // Add click handlers
+                    $spotlightResults.querySelectorAll('.result-item').forEach((item, i) => {
+                        if (results[i]) item.addEventListener('click', results[i].action);
+                    });
+                });
+                $spotlightOverlay.addEventListener('click', (e) => {
+                    if (e.target === $spotlightOverlay) closeSpotlight();
+                });
+            }
+
+            function openSpotlight() {
+                $spotlightOverlay.classList.add('active');
+                $spotlightInput.value = '';
+                $spotlightResults.classList.remove('show');
+                setTimeout(() => $spotlightInput.focus(), 100);
+            }
+
+            function closeSpotlight() {
+                $spotlightOverlay.classList.remove('active');
+                $spotlightResults.classList.remove('show');
+                $spotlightInput.value = '';
+            }
+
+            // ──────────────────────────────────────
+            // CONTROL CENTER
+            // ──────────────────────────────────────
+            function initControlCenter() {
+                const ccWifi = document.getElementById('cc-wifi');
+                const ccBt = document.getElementById('cc-bluetooth');
+                const ccAir = document.getElementById('cc-airdrop');
+                const ccDark = document.getElementById('cc-darkmode');
+                const ccBrightness = document.getElementById('cc-brightness');
+                const ccVolume = document.getElementById('cc-volume');
+                const ccToggleBtn = document.getElementById('cc-toggle-btn');
+                const ccOverlay = document.getElementById('control-center-overlay');
+
+                function toggleCC() {
+                    const isOpen = $controlCenter.classList.contains('open');
+                    if (isOpen) {
+                        $controlCenter.classList.remove('open');
+                        ccOverlay.classList.remove('active');
+                    } else {
+                        $controlCenter.classList.add('open');
+                        ccOverlay.classList.add('active');
+                        // Close notification center if open
+                        $notificationCenter.classList.remove('open');
+                    }
+                }
+                ccToggleBtn.addEventListener('click', toggleCC);
+                ccOverlay.addEventListener('click', toggleCC);
+
+                ccWifi.addEventListener('click', function() {
+                    state.settings.wifi = !state.settings.wifi;
+                    this.classList.toggle('active', state.settings.wifi);
+                    this.textContent = state.settings.wifi ? '📶 WiFi' : '📶 Off';
+                    document.getElementById('wifi-status').textContent = state.settings.wifi ? '📶' : '🚫';
+                    saveSettings();
+                });
+                ccBt.addEventListener('click', function() {
+                    state.settings.bluetooth = !state.settings.bluetooth;
+                    this.classList.toggle('active', state.settings.bluetooth);
+                    this.textContent = state.settings.bluetooth ? '📱 BT' : '📱 Off';
+                    saveSettings();
+                });
+                ccAir.addEventListener('click', function() {
+                    state.settings.airdrop = !state.settings.airdrop;
+                    this.classList.toggle('active', state.settings.airdrop);
+                    this.textContent = state.settings.airdrop ? '📤 On' : '📤 AirDrop';
+                    saveSettings();
+                });
+                ccDark.addEventListener('click', function() {
+                    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+                    applyTheme();
+                });
+                ccBrightness.addEventListener('input', function() {
+                    state.settings.brightness = parseInt(this.value);
+                    const brightness = this.value / 100;
+                    $desktop.style.filter = `brightness(${0.5 + brightness * 0.5})`;
+                    saveSettings();
+                });
+                ccVolume.addEventListener('input', function() {
+                    state.settings.volume = parseInt(this.value);
+                    saveSettings();
+                });
+                // Apply saved brightness
+                $desktop.style.filter = `brightness(${0.5 + (state.settings.brightness/100) * 0.5})`;
+                // Apply saved states
+                if (!state.settings.wifi) {
+                    ccWifi.classList.remove('active');
+                    ccWifi.textContent = '📶 Off';
+                    document.getElementById('wifi-status').textContent = '🚫';
+                }
+                if (!state.settings.bluetooth) {
+                    ccBt.classList.remove('active');
+                    ccBt.textContent = '📱 Off';
+                }
+            }
+
+            // ──────────────────────────────────────
+            // NOTIFICATIONS
+            // ──────────────────────────────────────
+            function showNotification(title, message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = 'notification-toast';
+                const icons = { success: '✅', warning: '⚠️', error: '❌', info: 'ℹ️' };
+                toast.innerHTML = `<strong>${icons[type]||''} ${title}</strong><br><small>${message}</small>`;
+                document.body.appendChild(toast);
+                state.notifications.push({ title, message, type, date: new Date().toLocaleTimeString() });
+                updateNotificationList();
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(120%)';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            function updateNotificationList() {
+                if (state.notifications.length === 0) {
+                    $notificationList.innerHTML = 'No new notifications';
+                } else {
+                    $notificationList.innerHTML = state.notifications.slice(-5).reverse().map(n =>
+                        `<div style="padding:6px 0;border-bottom:0.5px solid var(--divider);"><strong>${n.title}</strong><br><small>${n.message} · ${n.date}</small></div>`
+                    ).join('');
+                }
+            }
+            // Toggle notification center
+            document.getElementById('clock-display').addEventListener('click', () => {
+                const isOpen = $notificationCenter.classList.contains('open');
+                if (isOpen) {
+                    $notificationCenter.classList.remove('open');
+                } else {
+                    $notificationCenter.classList.add('open');
+                    $controlCenter.classList.remove('open');
+                    document.getElementById('control-center-overlay').classList.remove('active');
+                }
+            });
+
+            // ──────────────────────────────────────
+            // CONTEXT MENU
+            // ──────────────────────────────────────
+            function initContextMenu() {
+                document.addEventListener('click', () => {
+                    $contextMenu.classList.remove('show');
+                });
+                $desktop.addEventListener('contextmenu', (e) => {
+                    if (e.target.closest('.window') || e.target.closest('#dock') || e.target.closest('#menu-bar'))
+                        return;
+                    e.preventDefault();
+                    showContextMenu(e.clientX, e.clientY, [
+                        { label: 'New Folder', action: () => { openApp('finder');
+                                showNotification('Finder',
+                                    'Create a new folder in Finder'); } },
+                        { label: 'New Note', action: () => openApp('notes') },
+                        { label: 'Change Wallpaper', action: () => openApp('settings') },
+                        { divider: true },
+                        { label: 'Refresh Desktop', action: () => { renderDesktopIcons();
+                                showNotification('Desktop', 'Refreshed'); } },
+                    ]);
+                });
+            }
+
+            function showContextMenu(x, y, items) {
+                $contextMenu.innerHTML = items.map(item => {
+                    if (item.divider) return '<div class="context-menu-divider"></div>';
+                    return `<div class="context-menu-item">${item.label}</div>`;
+                }).join('');
+                $contextMenu.style.left = Math.min(x, window.innerWidth - 200) + 'px';
+                $contextMenu.style.top = Math.min(y, window.innerHeight - 200) + 'px';
+                $contextMenu.classList.add('show');
+                const menuItems = $contextMenu.querySelectorAll('.context-menu-item');
+                menuItems.forEach((el, i) => {
+                    const item = items.filter(it => !it.divider)[i];
+                    if (item) el.addEventListener('click', () => { item.action();
+                        $contextMenu.classList.remove('show'); });
+                });
+            }
+
+            // ──────────────────────────────────────
+            // KEYBOARD SHORTCUTS
+            // ──────────────────────────────────────
+            function initKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    const isCmd = e.metaKey || e.ctrlKey;
+                    if (isCmd && e.key === ' ' && !e.repeat) {
+                        e.preventDefault();
+                        openSpotlight();
+                    }
+                    if (isCmd && e.key === 'n' && !e.repeat) {
+                        e.preventDefault();
+                        openApp('finder');
+                    }
+                    if (isCmd && e.key === 'w' && !e.repeat) {
+                        e.preventDefault();
+                        if (state.activeWindowId) closeWindow(state.activeWindowId);
+                    }
+                    if (isCmd && e.key === 'm' && !e.repeat) {
+                        e.preventDefault();
+                        if (state.activeWindowId) minimizeWindow(state.activeWindowId);
+                    }
+                    if (isCmd && e.key === 'f' && !e.repeat) {
+                        e.preventDefault();
+                        openSpotlight();
+                    }
+                    if (e.key === 'Escape') {
+                        closeSpotlight();
+                        $controlCenter.classList.remove('open');
+                        document.getElementById('control-center-overlay').classList.remove('active');
+                        $notificationCenter.classList.remove('open');
+                        $contextMenu.classList.remove('show');
+                    }
+                });
+            }
+
+            // ──────────────────────────────────────
+            // MULTIPLAYER (MOCK)
+            // ──────────────────────────────────────
+            function initMultiplayer() {
+                // Mock WebSocket server simulation
+                const mockServer = {
+                    clients: [],
+                    broadcast(msg) {
+                        this.clients.forEach(c => c.onMessage(JSON.parse(msg)));
+                    },
+                    addClient(client) {
+                        this.clients.push(client);
+                        client.onMessage({ type: 'connected', userId: 'user-' + this.clients.length,
+                            users: this.clients.map(c => c.userId) });
+                        this.broadcast(JSON.stringify({ type: 'user-joined', userId: client.userId, users: this
+                                .clients.map(c => c.userId) }));
+                    },
+                };
+                const localClient = {
+                    userId: 'user-local',
+                    onMessage(data) {
+                        if (data.type === 'user-joined' && data.userId !== 'user-local') {
+                            state.multiplayerUsers = data.users || [];
+                            showNotification('Multiplayer', data.userId + ' joined the session', 'info');
+                        }
+                        if (data.type === 'cursor-move' && data.userId !== 'user-local') {
+                            state.multiplayerCursors[data.userId] = { x: data.x, y: data.y };
+                            updateRemoteCursors();
+                        }
+                    },
+                    send(data) {
+                        mockServer.broadcast(JSON.stringify({ ...data, userId: this.userId }));
+                    },
+                };
+                mockServer.addClient(localClient);
+                // Simulate another user joining after a delay
+                setTimeout(() => {
+                    const remoteClient = {
+                        userId: 'user-remote-1',
+                        onMessage(data) { /* remote handling */ },
+                    };
+                    mockServer.addClient(remoteClient);
+                    state.multiplayerUsers = mockServer.clients.map(c => c.userId);
+                }, 5000);
+
+                // Track local cursor for multiplayer
+                document.addEventListener('mousemove', (e) => {
+                    if (state.multiplayerUsers.length > 1) {
+                        localClient.send({ type: 'cursor-move', x: e.clientX, y: e.clientY });
+                    }
+                });
+            }
+
+            function updateRemoteCursors() {
+                // Remove old remote cursors
+                document.querySelectorAll('.remote-cursor').forEach(el => el.remove());
+                Object.entries(state.multiplayerCursors).forEach(([userId, pos]) => {
+                    const cursor = document.createElement('div');
+                    cursor.className = 'remote-cursor';
+                    cursor.style.cssText = `
+              position:fixed;left:${pos.x}px;top:${pos.y}px;width:12px;height:12px;
+              border-radius:50%;background:#ff6b6b;z-index:400;pointer-events:none;
+              box-shadow:0 0 8px rgba(255,107,107,0.6);transition:left 0.1s,top 0.1s;
+            `;
+                    cursor.title = userId;
+                    document.body.appendChild(cursor);
+                });
+            }
+
+            // ──────────────────────────────────────
+            // APPLE MENU
+            // ──────────────────────────────────────
+            document.getElementById('apple-menu-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const rect = e.target.getBoundingClientRect();
+                showContextMenu(rect.left, rect.bottom, [
+                    { label: 'About This Mac', action: () => showNotification('About',
+                            'macOS Simulator v1.0', 'info') },
+                    { label: 'System Preferences', action: () => openApp('settings') },
+                    { divider: true },
+                    { label: 'Restart', action: () => { location.reload(); } },
+                    { label: 'Shut Down', action: () => { document.body.innerHTML =
+                                '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-size:24px;">Shutting Down...</div>'; } },
+                ]);
+            });
+
+            // ──────────────────────────────────────
+            // STARTUP
+            // ──────────────────────────────────────
+            simulateBoot();
+            // Expose for debugging
+            window.macOSState = state;
+            window.macOS = {
+                openApp,
+                closeWindow,
+                showNotification,
+                state,
+            };
+            console.log('🍎 macOS Simulator ready. Try: openApp("finder"), openApp("notes"), openApp("calculator")');
+            console.log('Keyboard shortcuts: Cmd+Space = Spotlight, Cmd+N = Finder, Cmd+W = Close, Esc = Dismiss');
+        })();
+    </script>
+</body>
+</html>
